@@ -113,11 +113,18 @@ export default function ChatInterface({ category }: ChatInterfaceProps) {
     <div className="flex flex-col max-w-2xl mx-auto" style={{ height: 'calc(100vh - 64px)' }}>
       {/* Header */}
       <div className="p-4 border-b bg-white">
-        <h1 className="text-xl font-semibold capitalize">{category}</h1>
         {conversation && (
-          <p className="text-sm text-gray-600">
-            Step {conversation.currentStep} of {conversation.totalSteps}
-          </p>
+          <div className="flex justify-center">
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: conversation.totalSteps }, (_, i) => (
+                <div
+                  key={i}
+                  className={`w-2 h-2 rounded-full ${i < conversation.currentStep ? 'bg-blue-500' : 'bg-gray-300'
+                    }`}
+                />
+              ))}
+            </div>
+          </div>
         )}
       </div>
 
@@ -170,7 +177,7 @@ export default function ChatInterface({ category }: ChatInterfaceProps) {
               onClick={startNewConversation}
               className="w-full p-3 bg-blue-500 text-white rounded-lg"
             >
-              Start New {category} Session
+              Start New Session
             </button>
           </div>
         ) : (

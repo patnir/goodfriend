@@ -22,9 +22,5 @@ export default async function CategoryPage({ params }: CategoryPageProps) {
     redirect('/')
   }
 
-  return (
-    <div className="min-h-screen">
-      <ChatInterface category={category} />
-    </div>
-  )
+  return <ChatInterface category={category} />
 }
