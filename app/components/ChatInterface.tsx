@@ -35,7 +35,7 @@ export default function ChatInterface({ category }: ChatInterfaceProps) {
   // Start conversation on component mount
   useEffect(() => {
     startConversation()
-  }, [category])
+  }, [category]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const startConversation = async () => {
     setLoading(true)
