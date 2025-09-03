@@ -186,7 +186,7 @@ export default function ChatInterface({ category }: ChatInterfaceProps) {
             const lastAIMessage = conversation?.messages
               .filter(m => m.role === 'assistant')
               .pop()
-            const hasActiveChoices = lastAIMessage?.messageType === 'choices' && lastAIMessage.choices?.length > 0
+            const hasActiveChoices = lastAIMessage?.messageType === 'choices' && (lastAIMessage.choices?.length ?? 0) > 0
 
             return hasActiveChoices ? (
               <div className="text-center">
