@@ -9,18 +9,34 @@ interface CategoryPageProps {
 }
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
-  const { category } = await params
+  try {
+    const { category } = await params
+    console.log('CategoryPage - category:', category)
 
-  // Check if user is authenticated
-  const user = await getOrCreateUser()
-  if (!user) {
-    redirect('/')
+    // Validate category first
+    if (!VALID_CATEGORIES.includes(category)) {
+      console.log('Invalid category, redirecting to home')
+      redirect('/')
+    }
+
+    // Check if user is authenticated
+    console.log('Getting user...')
+    const user = await getOrCreateUser()
+    console.log('User result:', user ? 'User found' : 'No user')
+
+    if (!user) {
+      console.log('No user, redirecting to home')
+      redirect('/')
+    }
+
+    console.log('Rendering ChatInterface for category:', category)
+    return <ChatInterface category={category} />
+  } catch (error) {
+    console.error('CategoryPage Error:', error)
+    console.error('Error details:', {
+      message: error instanceof Error ? error.message : 'Unknown error',
+      stack: error instanceof Error ? error.stack : undefined
+    })
+    throw error
   }
-
-  // Validate category
-  if (!VALID_CATEGORIES.includes(category)) {
-    redirect('/')
-  }
-
-  return <ChatInterface category={category} />
 }
