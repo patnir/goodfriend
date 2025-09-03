@@ -251,9 +251,16 @@ ${actions}
       stack: error instanceof Error ? error.stack : undefined,
       name: error instanceof Error ? error.name : undefined
     })
+
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+    const errorCode = error && typeof error === 'object' && 'code' in error ? error.code : undefined
+
     return NextResponse.json({
       error: 'Internal server error',
-      details: process.env.NODE_ENV === 'development' ? error instanceof Error ? error.message : 'Unknown error' : undefined
+      message: errorMessage,
+      code: errorCode,
+      details: error instanceof Error ? error.stack : undefined,
+      timestamp: new Date().toISOString()
     }, { status: 500 })
   }
 }

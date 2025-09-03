@@ -31,6 +31,7 @@ export default function ChatInterface({ category }: ChatInterfaceProps) {
   const [conversation, setConversation] = useState<Conversation | null>(null)
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Start conversation on component mount
   useEffect(() => {
@@ -39,16 +40,26 @@ export default function ChatInterface({ category }: ChatInterfaceProps) {
 
   const startConversation = async () => {
     setLoading(true)
+    setError(null)
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ category })
       })
+
       const data = await response.json()
+
+      if (!response.ok) {
+        console.error('API Error Response:', data)
+        setError(`${data.message || data.error || 'Unknown error'} (Code: ${data.code || 'N/A'})`)
+        return
+      }
+
       setConversation(data.conversation)
     } catch (error) {
       console.error('Failed to start conversation:', error)
+      setError(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
     setLoading(false)
   }
@@ -58,6 +69,7 @@ export default function ChatInterface({ category }: ChatInterfaceProps) {
     if (!message && selectedChoice === undefined) return
 
     setLoading(true)
+    setError(null)
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -69,11 +81,20 @@ export default function ChatInterface({ category }: ChatInterfaceProps) {
           conversationId: conversation.id
         })
       })
+
       const data = await response.json()
+
+      if (!response.ok) {
+        console.error('API Error Response:', data)
+        setError(`${data.message || data.error || 'Unknown error'} (Code: ${data.code || 'N/A'})`)
+        return
+      }
+
       setConversation(data.conversation)
       setInput('')
     } catch (error) {
       console.error('Failed to send message:', error)
+      setError(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     }
     setLoading(false)
   }
@@ -92,6 +113,7 @@ export default function ChatInterface({ category }: ChatInterfaceProps) {
   const startNewConversation = () => {
     setConversation(null)
     setInput('')
+    setError(null)
     startConversation()
   }
 
@@ -105,8 +127,25 @@ export default function ChatInterface({ category }: ChatInterfaceProps) {
       ))
   }
 
-  if (loading && !conversation) {
+  if (loading && !conversation && !error) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>
+  }
+
+  if (error && !conversation) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4">
+        <div className="max-w-md text-center">
+          <h2 className="text-xl font-semibold text-red-600 mb-4">Something went wrong</h2>
+          <p className="text-gray-700 mb-6">{error}</p>
+          <button
+            onClick={startConversation}
+            className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -127,6 +166,19 @@ export default function ChatInterface({ category }: ChatInterfaceProps) {
           </div>
         )}
       </div>
+
+      {/* Error Display */}
+      {error && (
+        <div className="p-4 bg-red-50 border-b border-red-200">
+          <p className="text-red-700 text-sm">{error}</p>
+          <button
+            onClick={() => setError(null)}
+            className="text-red-600 text-xs underline mt-1"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Messages */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
