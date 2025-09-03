@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
         data: {
           userId: user.id,
           category,
-          totalSteps: category === 'anxiety' ? 6 : 3
+          totalSteps: category === 'anxiety' ? 4 : 3
         },
         include: { messages: { orderBy: { order: 'asc' } } }
       })
@@ -145,11 +145,14 @@ Example format:
 Keep it concise and focused.`
           )
 
-          // Extract choices from AI response
+          // Extract choices from AI response and clean them up
           const lines = aiContent.split('\n').filter(line => line.trim() && /^\d+\./.test(line.trim()))
           choices = lines.map(line => line.replace(/^\d+\.\s*/, '').trim())
+
+          // Create a cleaner message for display
+          aiContent = "I can see some negative thoughts behind your concern. Which one feels strongest right now?"
         } else if (userMessageCount === 2) {
-          // Second user message - user selected a negative thought, now challenge it
+          // Second user message - user selected a negative thought, ask challenge question
           const selectedThought = userContent
 
           aiContent = await callOpenAI(
@@ -165,8 +168,43 @@ Examples of good questions:
 
 Just return the question, nothing else.`
           )
+        } else if (userMessageCount === 3) {
+          // Third user message - user reflected, now give complete response with balanced thought + actions
+          const allUserMessages = await prisma.message.findMany({
+            where: { conversationId: conversation.id, role: 'user' },
+            orderBy: { order: 'asc' }
+          })
+          const originalConcern = allUserMessages[0]?.content || ''
+          const selectedThought = allUserMessages[1]?.content || ''
+          const userReflection = allUserMessages[2]?.content || ''
+
+          // Generate balanced thought (shorter prompt)
+          const balancedThought = await callOpenAI(
+            `Negative thought: "${selectedThought}"
+User reflection: "${userReflection}"
+
+Create a balanced, realistic replacement thought in first person.`,
+            `Create a short, balanced "I" statement that's realistic and empowering. Keep it concise.`
+          )
+
+          // Generate actions (shorter prompt for concise response)
+          const actions = await callOpenAI(
+            `Original concern: "${originalConcern}"
+Balanced thought: "${balancedThought}"
+
+Suggest 3 small, specific actions to help with this concern.`,
+            `Give 3 short, actionable steps. Format as simple numbered list. Be concise and practical.`
+          )
+
+          // Combine everything into one smooth response with better formatting
+          aiContent = `💡 **Balanced thought:**  
+"${balancedThought}"
+
+**Quick actions:**  
+${actions}
+
+✨ **You've got this!** Remember your balanced thought when this comes up again.`
         }
-        // Add more anxiety steps here later...
       }
 
       // Save AI response
@@ -183,7 +221,7 @@ Just return the question, nothing else.`
       })
 
       // Update conversation step and completion
-      const maxMessages = category === 'gratitude' ? 2 : 6  // Anxiety has more steps
+      const maxMessages = category === 'gratitude' ? 2 : 3  // Anxiety: 3 user messages (streamlined)
       const isComplete = userMessageCount >= maxMessages
 
       await prisma.conversation.update({

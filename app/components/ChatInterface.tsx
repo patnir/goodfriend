@@ -95,14 +95,24 @@ export default function ChatInterface({ category }: ChatInterfaceProps) {
     startConversation()
   }
 
+  const formatMessage = (content: string) => {
+    // Simple markdown-like formatting
+    return content
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // **bold**
+      .replace(/\*(.*?)\*/g, '<em>$1</em>') // *italic*
+      .split('\n').map((line, i) => (
+        <div key={i} dangerouslySetInnerHTML={{ __html: line }} />
+      ))
+  }
+
   if (loading && !conversation) {
     return <div className="flex justify-center items-center min-h-screen">Loading...</div>
   }
 
   return (
-    <div className="flex flex-col h-screen max-w-2xl mx-auto">
+    <div className="flex flex-col max-w-2xl mx-auto" style={{ height: 'calc(100vh - 64px)' }}>
       {/* Header */}
-      <div className="p-4 border-b">
+      <div className="p-4 border-b bg-white">
         <h1 className="text-xl font-semibold capitalize">{category}</h1>
         {conversation && (
           <p className="text-sm text-gray-600">
@@ -119,7 +129,9 @@ export default function ChatInterface({ category }: ChatInterfaceProps) {
               ? 'bg-blue-500 text-white ml-12'
               : 'bg-gray-100 mr-12'
               }`}>
-              <p className="text-sm">{message.content}</p>
+              <div className="text-sm whitespace-pre-line">
+                {formatMessage(message.content)}
+              </div>
 
               {/* Choice buttons for AI messages with choices */}
               {message.messageType === 'choices' && message.choices && (
@@ -150,7 +162,7 @@ export default function ChatInterface({ category }: ChatInterfaceProps) {
       </div>
 
       {/* Input or Completion */}
-      <div className="p-4 border-t">
+      <div className="p-4 border-t bg-white">
         {conversation?.isComplete ? (
           <div className="text-center space-y-4">
             <p className="text-gray-600">Conversation complete!</p>
