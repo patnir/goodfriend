@@ -13,3 +13,39 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id String @id @default(uuid())
+  clerkId String @unique
+  conversations Conversation[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Conversation {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category  String   // "gratitude", "anxiety", etc.
+  currentStep Int    @default(1)
+  totalSteps Int     @default(3)
+  isComplete Boolean @default(false)
+  messages  Message[]
+  context   Json?    // Store any flow-specific data
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role           String       // "user" | "assistant"
+  content        String
+  messageType    String?      // "text" | "choices" | "choice_selection"
+  choices        String[]     // For AI messages that present options
+  selectedChoice Int?         // For user messages that select an option
+  step           Int          // Which step this message belongs to
+  order          Int          // Message order within conversation
+  createdAt      DateTime     @default(now())
+}
